@@ -50,5 +50,14 @@ func (app *application) createSnippetHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Write([]byte("Create a new snippet"))
+	title := "0 snail"
+	content := "foo bar"
+	expires := "7"
+	_, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/snippet", http.StatusSeeOther)
 }

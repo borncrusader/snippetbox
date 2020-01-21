@@ -34,5 +34,6 @@ INSERT INTO snippets(title, content, created, expires) VALUES (
 CREATE USER web;
 
 GRANT INSERT, SELECT ON TABLE snippets TO web;
+GRANT USAGE, SELECT ON SEQUENCE snippets_id_seq TO web;
 
 ALTER USER web PASSWORD 'password';

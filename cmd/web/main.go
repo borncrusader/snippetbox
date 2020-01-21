@@ -8,6 +8,7 @@ import (
 	"os"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"srinathkrishna.in/snippetbox/pkg/models/pgsql"
 )
 
 type application struct {
@@ -17,11 +18,14 @@ type application struct {
 	server   *http.Server
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	db       *sql.DB
+	snippets *pgsql.SnippetModel
 }
 
 func (app *application) parseArgs() {
 	app.addr = flag.String("addr", ":4000", "HTTP Network Address")
 	app.dsn = flag.String("dsn", "user=web password=password host=localhost port=5432 database=snippetbox sslmode=disable", "PGX DSN")
+
 	flag.Parse()
 }
 
@@ -30,17 +34,21 @@ func (app *application) setupConfig() {
 	app.infoLog = log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.LUTC)
 }
 
-func (app *application) openDB() (*sql.DB, error) {
-	db, err := sql.Open("pgx", *app.dsn)
+func (app *application) setupDB() error {
+	var err error
+
+	app.db, err = sql.Open("pgx", *app.dsn)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err = db.Ping(); err != nil {
-		return nil, err
+	if err = app.db.Ping(); err != nil {
+		return err
 	}
 
-	return db, nil
+	app.snippets = &pgsql.SnippetModel{DB: app.db}
+
+	return nil
 }
 
 func (app *application) createServer() {
@@ -64,11 +72,11 @@ func main() {
 	app.parseArgs()
 	app.setupConfig()
 
-	db, err := app.openDB()
+	err := app.setupDB()
 	if err != nil {
 		app.errorLog.Fatal(err)
 	}
-	defer db.Close()
+	defer app.db.Close()
 
 	app.createServer()
 	app.registerRoutes()
