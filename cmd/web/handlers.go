@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"srinathkrishna.in/snippetbox/pkg/models"
 )
 
 func (app *application) homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +43,16 @@ func (app *application) showSnippetHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Write([]byte("Showing from Snippetbox"))
+	s, err := app.snippets.Get(id)
+	if err == models.ErrNoRecord {
+		app.notFound(w)
+		return
+	} else if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%v", s)
 }
 
 func (app *application) createSnippetHandler(w http.ResponseWriter, r *http.Request) {

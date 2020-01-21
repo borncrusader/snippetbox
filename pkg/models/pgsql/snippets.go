@@ -30,6 +30,8 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	err = m.DB.QueryRow(stmt, title, content).Scan(&id)
 	if err != nil {
 		return 0, err
+	} else if err == sql.ErrNoRows {
+		return 0, models.ErrNoRecord
 	}
 
 	return id, nil
@@ -37,7 +39,18 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 
 // Get a given snippet
 func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
-	return nil, nil
+	s := &models.Snippet{}
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+			 WHERE expires > now()::timestamp AND id = $1`
+	err := m.DB.QueryRow(stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	if err != nil {
+		return nil, err
+	} else if err == sql.ErrNoRows {
+		return nil, models.ErrNoRecord
+	}
+
+	return s, nil
 }
 
 // Latest returns the last few snippets
