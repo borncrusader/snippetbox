@@ -2,6 +2,8 @@ package pgsql
 
 import (
 	"database/sql"
+	"fmt"
+	"strconv"
 
 	"srinathkrishna.in/snippetbox/pkg/models"
 )
@@ -14,10 +16,18 @@ type SnippetModel struct {
 // Insert into DB
 func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	id := 0
-	stmt := `INSERT INTO snippets (title, content, created, expires)
-			 VALUES ($1, $2, now()::timestamp, now()::timestamp + '3 day'::interval)
-			 RETURNING id`
-	err := m.DB.QueryRow(stmt, title, content).Scan(&id)
+
+	// this is required because QueryRow does not interpolate the interval string since
+	// it is quoted
+	expiry, err := strconv.ParseInt(expires, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	stmt := fmt.Sprintf(`INSERT INTO snippets (title, content, created, expires)
+			 VALUES ($1, $2, now()::timestamp, now()::timestamp + '%v day'::interval)
+			 RETURNING id`, expiry)
+	err = m.DB.QueryRow(stmt, title, content).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
