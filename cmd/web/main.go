@@ -6,25 +6,38 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"srinathkrishna.in/snippetbox/pkg/models/pgsql"
 )
 
 type application struct {
-	addr     *string
-	dsn      *string
-	mux      *http.ServeMux
-	server   *http.Server
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	db       *sql.DB
-	snippets *pgsql.SnippetModel
+	addr              *string
+	dsn               *string
+	readTimeout       time.Duration
+	readHeaderTimeout time.Duration
+	writeTimeout      time.Duration
+	idleTimeout       time.Duration
+	defaultTimeout    time.Duration
+	mux               *http.ServeMux
+	server            *http.Server
+	errorLog          *log.Logger
+	infoLog           *log.Logger
+	db                *sql.DB
+	snippets          *pgsql.SnippetModel
 }
 
 func (app *application) parseArgs() {
 	app.addr = flag.String("addr", ":4000", "HTTP Network Address")
 	app.dsn = flag.String("dsn", "user=web password=password host=localhost port=5432 database=snippetbox sslmode=disable", "PGX DSN")
+
+	// TODO: these need to be parsed from args
+	app.readTimeout = 5 * time.Second
+	app.readHeaderTimeout = 5 * time.Second
+	app.writeTimeout = 5 * time.Second
+	app.idleTimeout = 10 * time.Second
+	app.defaultTimeout = 2 * time.Second
 
 	flag.Parse()
 }
@@ -54,9 +67,14 @@ func (app *application) setupDB() error {
 func (app *application) createServer() {
 	app.mux = http.NewServeMux()
 	app.server = &http.Server{
-		Addr:     *app.addr,
-		ErrorLog: app.errorLog,
-		Handler:  app.mux,
+		Addr:              *app.addr,
+		ErrorLog:          app.errorLog,
+		ReadTimeout:       app.readTimeout,
+		ReadHeaderTimeout: app.readHeaderTimeout,
+		WriteTimeout:      app.writeTimeout,
+		IdleTimeout:       app.idleTimeout,
+		// TODO: have a better timeout page
+		Handler: http.TimeoutHandler(app.mux, app.defaultTimeout, "Timeout!"),
 	}
 }
 

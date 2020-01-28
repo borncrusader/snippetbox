@@ -54,6 +54,30 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 }
 
 // Latest returns the last few snippets
-func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
-	return nil, nil
+func (m *SnippetModel) Latest(limit int) ([]*models.Snippet, error) {
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+			 WHERE expires > now()::timestamp ORDER BY created DESC LIMIT $1`
+
+	rows, err := m.DB.Query(stmt, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	snippets := []*models.Snippet{}
+	for rows.Next() {
+		s := &models.Snippet{}
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+
+		snippets = append(snippets, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
 }
