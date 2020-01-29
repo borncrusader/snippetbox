@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// TODO: have a better timeout page; also how to report timeouts on the logs?
 func (app *application) recoverTimeouts(next http.Handler) http.Handler {
 	return http.TimeoutHandler(next, app.defaultTimeout, "Timeout!")
 }

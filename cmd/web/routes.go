@@ -10,7 +10,6 @@ func (app *application) registerRoutes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	app.mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 
-	// TODO: have a better timeout page
 	return app.recoverPanic(
 		app.recoverTimeouts(
 			app.logRequest(
