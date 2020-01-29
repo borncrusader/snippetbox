@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+func (app *application) recoverTimeouts(next http.Handler) http.Handler {
+	return http.TimeoutHandler(next, app.defaultTimeout, "Timeout!")
+}
+
 func (app *application) secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-XSS-Protection", "1; mode=block")

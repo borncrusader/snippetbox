@@ -12,12 +12,12 @@ func (app *application) registerRoutes() http.Handler {
 
 	// TODO: have a better timeout page
 	return app.recoverPanic(
-		http.TimeoutHandler(
+		app.recoverTimeouts(
 			app.logRequest(
 				app.secureHeaders(
 					app.mux,
 				),
-			), app.defaultTimeout, "Timeout!",
+			),
 		),
 	)
 }
