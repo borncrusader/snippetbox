@@ -84,15 +84,14 @@ func (app *application) createServer() {
 		ReadHeaderTimeout: app.readHeaderTimeout,
 		WriteTimeout:      app.writeTimeout,
 		IdleTimeout:       app.idleTimeout,
-		// TODO: have a better timeout page
-		Handler: http.TimeoutHandler(app.mux, app.defaultTimeout, "Timeout!"),
+		Handler:           app.registerRoutes(),
 	}
 }
 
 func (app *application) startServer() error {
 	app.infoLog.Printf("Starting server on %v", *app.addr)
 
-	return http.ListenAndServe(*app.addr, app.mux)
+	return app.server.ListenAndServe()
 }
 
 func main() {
@@ -110,7 +109,6 @@ func main() {
 	app.primeCaches()
 
 	app.createServer()
-	app.registerRoutes()
 
 	err = app.startServer()
 	if err != nil {

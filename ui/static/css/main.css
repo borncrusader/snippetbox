@@ -258,7 +258,7 @@ button:hover {
 }
 
 .snippet .metadata time:last-child {
-    float: left;
+    float: right;
 }
 
 div.flash {
