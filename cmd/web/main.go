@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +27,7 @@ type application struct {
 	infoLog           *log.Logger
 	db                *sql.DB
 	snippets          *pgsql.SnippetModel
+	templateCache     map[string]*template.Template
 }
 
 func (app *application) parseArgs() {
@@ -64,6 +66,15 @@ func (app *application) setupDB() error {
 	return nil
 }
 
+func (app *application) primeCaches() {
+	cache, err := newTemplateCache("./ui/html")
+	if err != nil {
+		app.errorLog.Fatal(err)
+	}
+
+	app.templateCache = cache
+}
+
 func (app *application) createServer() {
 	app.mux = http.NewServeMux()
 	app.server = &http.Server{
@@ -95,6 +106,8 @@ func main() {
 		app.errorLog.Fatal(err)
 	}
 	defer app.db.Close()
+
+	app.primeCaches()
 
 	app.createServer()
 	app.registerRoutes()
