@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bmizerany/pat"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"srinathkrishna.in/snippetbox/pkg/models/pgsql"
 )
@@ -21,7 +22,7 @@ type application struct {
 	writeTimeout      time.Duration
 	idleTimeout       time.Duration
 	defaultTimeout    time.Duration
-	mux               *http.ServeMux
+	mux               *pat.PatternServeMux
 	server            *http.Server
 	errorLog          *log.Logger
 	infoLog           *log.Logger
@@ -76,7 +77,8 @@ func (app *application) primeCaches() {
 }
 
 func (app *application) createServer() {
-	app.mux = http.NewServeMux()
+	app.mux = pat.New()
+
 	app.server = &http.Server{
 		Addr:              *app.addr,
 		ErrorLog:          app.errorLog,

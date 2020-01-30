@@ -3,12 +3,14 @@ package main
 import "net/http"
 
 func (app *application) registerRoutes() http.Handler {
-	app.mux.HandleFunc("/", app.homeHandler)
-	app.mux.HandleFunc("/snippet", app.showSnippetHandler)
-	app.mux.HandleFunc("/snippet/create", app.createSnippetHandler)
+	app.mux.Get("/", http.HandlerFunc(app.homeHandler))
+	app.mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetFormHandler))
+	app.mux.Post("/snippet/create", http.HandlerFunc(app.createSnippetHandler))
+	// this should be lower since it's less specific than
+	app.mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippetHandler))
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	app.mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+	app.mux.Get("/static/", http.StripPrefix("/static/", fileServer))
 
 	return app.recoverPanic(
 		app.recoverTimeouts(
