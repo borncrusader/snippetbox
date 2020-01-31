@@ -99,7 +99,7 @@ func (app *application) createServer() {
 func (app *application) startServer() error {
 	app.infoLog.Printf("Starting server on %v", *app.addr)
 
-	return app.server.ListenAndServe()
+	return app.server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 }
 
 func run(app *application) error {
