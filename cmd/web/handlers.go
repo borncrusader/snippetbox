@@ -47,9 +47,18 @@ func (app *application) handleSnippetGet() http.HandlerFunc {
 
 func (app *application) handleSnippetCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		title := "0 snail"
-		content := "foo bar"
-		expires := "7"
+		// limit size of the body, ParseForm() would fail if request body was more than 10M
+		r.Body = http.MaxBytesReader(w, r.Body, 4096)
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		title := r.PostForm.Get("title")
+		content := r.PostForm.Get("content")
+		expires := r.PostForm.Get("expires")
+
 		id, err := app.snippets.Insert(title, content, expires)
 		if err != nil {
 			app.serverError(w, err)
@@ -62,6 +71,6 @@ func (app *application) handleSnippetCreate() http.HandlerFunc {
 
 func (app *application) handleSnippetCreateForm() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Create a new snippet..."))
+		app.render(w, r, "create.page.tmpl", nil)
 	}
 }

@@ -14,8 +14,8 @@ func (app *application) registerRoutes() http.Handler {
 	app.router = pat.New()
 
 	app.router.Get("/", app.handleHomeGet())
-	app.router.Get("/snippet/create", app.handleSnippetGet())
-	app.router.Post("/snippet/create", app.handleSnippetCreateForm())
+	app.router.Get("/snippet/create", app.handleSnippetCreateForm())
+	app.router.Post("/snippet/create", app.handleSnippetCreate())
 	// this should be lower since it's less specific
 	app.router.Get("/snippet/:id", app.handleSnippetGet())
 
