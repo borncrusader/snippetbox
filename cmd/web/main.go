@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -24,6 +25,7 @@ type application struct {
 	errorLog          *log.Logger
 	idleTimeout       time.Duration
 	infoLog           *log.Logger
+	maxHeaderBytes    int
 	readHeaderTimeout time.Duration
 	readTimeout       time.Duration
 	router            *pat.PatternServeMux
@@ -42,9 +44,10 @@ func (app *application) parseArgs() {
 	// TODO: these need to be parsed from args
 	app.readTimeout = 5 * time.Second
 	app.readHeaderTimeout = 5 * time.Second
-	app.writeTimeout = 5 * time.Second
-	app.idleTimeout = 10 * time.Second
+	app.writeTimeout = 10 * time.Second
+	app.idleTimeout = 60 * time.Second
 	app.defaultTimeout = 2 * time.Second
+	app.maxHeaderBytes = 524288
 
 	app.secret = flag.String("secret", "872ADm1srQkgqwy2E39h33OqTKLwnYUf", "Secret Key")
 
@@ -83,16 +86,24 @@ func (app *application) primeCaches() {
 }
 
 func (app *application) createServer() {
+	tlsConfig := &tls.Config{
+		PreferServerCipherSuites: true,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	app.session = sessions.New([]byte(*app.secret))
 	app.session.Lifetime = 12 * time.Hour
+
 	app.server = &http.Server{
 		Addr:              *app.addr,
 		ErrorLog:          app.errorLog,
-		ReadTimeout:       app.readTimeout,
-		ReadHeaderTimeout: app.readHeaderTimeout,
-		WriteTimeout:      app.writeTimeout,
-		IdleTimeout:       app.idleTimeout,
 		Handler:           app.registerRoutes(),
+		IdleTimeout:       app.idleTimeout,
+		MaxHeaderBytes:    app.maxHeaderBytes,
+		ReadHeaderTimeout: app.readHeaderTimeout,
+		ReadTimeout:       app.readTimeout,
+		TLSConfig:         tlsConfig,
+		WriteTimeout:      app.writeTimeout,
 	}
 }
 
