@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bmizerany/pat"
+	"github.com/golangcollege/sessions"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"srinathkrishna.in/snippetbox/pkg/models/pgsql"
@@ -17,19 +18,21 @@ import (
 
 type application struct {
 	addr              *string
-	dsn               *string
-	readTimeout       time.Duration
-	readHeaderTimeout time.Duration
-	writeTimeout      time.Duration
-	idleTimeout       time.Duration
-	defaultTimeout    time.Duration
-	router            *pat.PatternServeMux
-	server            *http.Server
-	errorLog          *log.Logger
-	infoLog           *log.Logger
 	db                *sql.DB
+	defaultTimeout    time.Duration
+	dsn               *string
+	errorLog          *log.Logger
+	idleTimeout       time.Duration
+	infoLog           *log.Logger
+	readHeaderTimeout time.Duration
+	readTimeout       time.Duration
+	router            *pat.PatternServeMux
+	secret            *string
+	server            *http.Server
+	session           *sessions.Session
 	snippets          *pgsql.SnippetModel
 	templateCache     map[string]*template.Template
+	writeTimeout      time.Duration
 }
 
 func (app *application) parseArgs() {
@@ -42,6 +45,8 @@ func (app *application) parseArgs() {
 	app.writeTimeout = 5 * time.Second
 	app.idleTimeout = 10 * time.Second
 	app.defaultTimeout = 2 * time.Second
+
+	app.secret = flag.String("secret", "872ADm1srQkgqwy2E39h33OqTKLwnYUf", "Secret Key")
 
 	flag.Parse()
 }
@@ -78,6 +83,8 @@ func (app *application) primeCaches() {
 }
 
 func (app *application) createServer() {
+	app.session = sessions.New([]byte(*app.secret))
+	app.session.Lifetime = 12 * time.Hour
 	app.server = &http.Server{
 		Addr:              *app.addr,
 		ErrorLog:          app.errorLog,
