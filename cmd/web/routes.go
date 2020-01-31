@@ -1,24 +1,26 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/bmizerany/pat"
+	"github.com/justinas/alice"
+)
 
 func (app *application) registerRoutes() http.Handler {
-	app.mux.Get("/", http.HandlerFunc(app.homeHandler))
-	app.mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetFormHandler))
-	app.mux.Post("/snippet/create", http.HandlerFunc(app.createSnippetHandler))
-	// this should be lower since it's less specific than
-	app.mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippetHandler))
+	chain := alice.New(app.recoverPanic, app.recoverTimeouts,
+		app.logRequest, app.secureHeaders)
+
+	app.router = pat.New()
+
+	app.router.Get("/", app.handleHomeGet())
+	app.router.Get("/snippet/create", app.handleSnippetGet())
+	app.router.Post("/snippet/create", app.handleSnippetCreateForm())
+	// this should be lower since it's less specific
+	app.router.Get("/snippet/:id", app.handleSnippetGet())
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	app.mux.Get("/static/", http.StripPrefix("/static/", fileServer))
+	app.router.Get("/static/", http.StripPrefix("/static/", fileServer))
 
-	return app.recoverPanic(
-		app.recoverTimeouts(
-			app.logRequest(
-				app.secureHeaders(
-					app.mux,
-				),
-			),
-		),
-	)
+	return chain.Then(app.router)
 }

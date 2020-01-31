@@ -11,6 +11,7 @@ import (
 
 	"github.com/bmizerany/pat"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/pkg/errors"
 	"srinathkrishna.in/snippetbox/pkg/models/pgsql"
 )
 
@@ -22,7 +23,7 @@ type application struct {
 	writeTimeout      time.Duration
 	idleTimeout       time.Duration
 	defaultTimeout    time.Duration
-	mux               *pat.PatternServeMux
+	router            *pat.PatternServeMux
 	server            *http.Server
 	errorLog          *log.Logger
 	infoLog           *log.Logger
@@ -77,8 +78,6 @@ func (app *application) primeCaches() {
 }
 
 func (app *application) createServer() {
-	app.mux = pat.New()
-
 	app.server = &http.Server{
 		Addr:              *app.addr,
 		ErrorLog:          app.errorLog,
@@ -96,15 +95,14 @@ func (app *application) startServer() error {
 	return app.server.ListenAndServe()
 }
 
-func main() {
-	app := &application{}
-
+func run(app *application) error {
 	app.parseArgs()
+
 	app.setupConfig()
 
 	err := app.setupDB()
 	if err != nil {
-		app.errorLog.Fatal(err)
+		return errors.Wrap(err, "setup database")
 	}
 	defer app.db.Close()
 
@@ -114,6 +112,17 @@ func main() {
 
 	err = app.startServer()
 	if err != nil {
+		return errors.Wrap(err, "server start")
+	}
+
+	return nil
+}
+
+func main() {
+	app := &application{}
+
+	if err := run(app); err != nil {
 		app.errorLog.Fatal(err)
+		os.Exit(1)
 	}
 }
