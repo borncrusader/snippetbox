@@ -28,6 +28,18 @@ func (f *Form) Required(fields ...string) {
 	}
 }
 
+func (f *Form) MinMaxLength(field string, min, max int) {
+	value := f.Get(field)
+	if value == "" {
+		return
+	}
+
+	if utf8.RuneCountInString(value) < min || utf8.RuneCountInString(value) > max {
+		f.Errors.Add(field,
+			fmt.Sprintf("This field doesn't conform to requirements (min: %d, max: %d)", min, max))
+	}
+}
+
 func (f *Form) MaxLength(field string, d int) {
 	value := f.Get(field)
 	if value == "" {

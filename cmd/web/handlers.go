@@ -46,6 +46,7 @@ func (app *application) handleSnippetGet() http.HandlerFunc {
 	}
 }
 
+// handleSnippetCreate handles the POST
 func (app *application) handleSnippetCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// limit size of the body, ParseForm() would fail if request body was more than 10M
@@ -85,5 +86,61 @@ func (app *application) handleSnippetCreateForm() http.HandlerFunc {
 		app.render(w, r, "create.page.tmpl", &templateData{
 			Form: forms.New(nil),
 		})
+	}
+}
+
+func (app *application) handleUserSignupForm() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		app.render(w, r, "signup.page.tmpl", &templateData{
+			Form: forms.New(nil),
+		})
+	}
+}
+
+// handleUserSignup handles the POST
+func (app *application) handleUserSignup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// limit size of the body, ParseForm() would fail if request body was more than 10M
+		r.Body = http.MaxBytesReader(w, r.Body, 4096)
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		form := forms.New(r.Form)
+		form.Required("name", "email", "password")
+		form.MaxLength("name", 255)
+		form.MaxLength("email", 255)
+		form.MinMaxLength("password", 8, 32)
+
+		if !form.Valid() {
+			app.render(w, r, "signup.page.tmpl", &templateData{
+				Form: form,
+			})
+			return
+		}
+
+		//id, err := app.users.Insert(form.Get("name"), form.Get("email"),
+		//							form.Get(""))
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+func (app *application) handleUserLoginForm() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
+}
+
+func (app *application) handleUserLogin() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
+}
+
+func (app *application) handleUserLogout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 	}
 }

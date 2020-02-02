@@ -34,6 +34,7 @@ type application struct {
 	session           *sessions.Session
 	snippets          *pgsql.SnippetModel
 	templateCache     map[string]*template.Template
+	users             *pgsql.UserModel
 	writeTimeout      time.Duration
 }
 
@@ -72,6 +73,7 @@ func (app *application) setupDB() error {
 	}
 
 	app.snippets = &pgsql.SnippetModel{DB: app.db}
+	app.users = &pgsql.UserModel{DB: app.db}
 
 	return nil
 }

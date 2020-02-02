@@ -37,3 +37,16 @@ GRANT INSERT, SELECT ON TABLE snippets TO web;
 GRANT USAGE, SELECT ON SEQUENCE snippets_id_seq TO web;
 
 ALTER USER web PASSWORD 'password';
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE users (
+    id uuid NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    salted_password CHAR(128) NOT NULL,
+    salt CHAR(128) NOT NULL,
+    created TIMESTAMP NOT NULL
+);
+
+ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
