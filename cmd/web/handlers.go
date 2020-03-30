@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"golang.org/x/crypto/bcrypt"
 	"srinathkrishna.in/snippetbox/pkg/forms"
 	"srinathkrishna.in/snippetbox/pkg/models"
+	"srinathkrishna.in/snippetbox/pkg/passwd"
 )
 
 func (app *application) handleHomeGet() http.HandlerFunc {
@@ -121,8 +123,27 @@ func (app *application) handleUserSignup() http.HandlerFunc {
 			return
 		}
 
-		//id, err := app.users.Insert(form.Get("name"), form.Get("email"),
-		//							form.Get(""))
+		salt, err := passwd.RandomBase64String(64)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		password := fmt.Sprintf("%s%s", form.Get("password"), salt)
+
+		saltedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		fmt.Fprintf(w, "password: %s, len: %d", string(saltedPassword), len(string(saltedPassword)))
+
+		err = app.users.Insert(form.Get("name"), form.Get("email"), string(saltedPassword), salt)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}

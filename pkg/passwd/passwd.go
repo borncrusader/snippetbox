@@ -6,11 +6,11 @@ import (
 )
 
 func RandomBase64String(length int) (string, error) {
-	b := make(byte[], length)
+	b := make([]byte, length)
 
 	if _, err := rand.Read(b); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return base64.RawStdEncoding.EncodeToString(b, length), nil
+	return base64.RawStdEncoding.EncodeToString(b)[:length], nil
 }
